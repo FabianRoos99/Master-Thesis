@@ -28,9 +28,9 @@ filled_form <- html_form_set(login_form,
 session <- session_submit(session, filled_form)
 
 
-# Relevant timeframe (2024) -----------------------------------
+# Relevant timeframe (2017) -----------------------------------
 
-months <- seq(as.Date("2024-01-01"), as.Date("2024-12-31"), by = "1 month")
+months <- seq(as.Date("2017-01-01"), as.Date("2017-12-31"), by = "1 month")
 months <- format(months, "%Y-%m")
 
 # My functions for Web-Scraping -------------------------------------------
@@ -300,20 +300,20 @@ New_Music_Friday$date <- format(New_Music_Friday$date, "%Y-%m-%d")
 # extracting country origin, label and release year from ISRC
 New_Music_Friday$origin <- substr(New_Music_Friday$isrc, 1, 2)
 New_Music_Friday$label <- substr(New_Music_Friday$isrc, 3, 5)
-New_Music_Friday$release_year <- ifelse(as.numeric(substr(New_Music_Friday$isrc, 6, 7)) <= 24,
-                                        paste("20", substr(New_Music_Friday$isrc, 6, 7), sep = ""),
-                                        paste("19", substr(New_Music_Friday$isrc, 6, 7), sep = ""))
+New_Music_Friday$release_year <- ifelse(as.numeric(substr(New_Music_Friday$isrc, 6, 7)) <= 17,
+                                    paste("20", substr(New_Music_Friday$isrc, 6, 7), sep = ""),
+                                    paste("19", substr(New_Music_Friday$isrc, 6, 7), sep = ""))
 
 # allocating ISRC-abbreviations to origin country and record label
 New_Music_Friday$origin <- isrc_country[New_Music_Friday$origin]
 New_Music_Friday$label <- ifelse(New_Music_Friday$label %in% names(isrc_label),
-                                isrc_label[New_Music_Friday$label],
-                                "Indie")
+                          isrc_label[New_Music_Friday$label],
+                          "Indie")
 
 # adding the drop_date
 New_Music_Friday <- New_Music_Friday %>%
   group_by(song_id, add_date) %>%
-  mutate(drop_date = if_else(max(date) == "2024-12-31", NA, max(date))) %>%
+  mutate(drop_date = if_else(max(date) == "2017-12-31", NA, max(date))) %>%
   ungroup()
 
 # converting add and drop dates
@@ -321,7 +321,7 @@ New_Music_Friday$add_date <- as.Date(New_Music_Friday$add_date)
 New_Music_Friday$drop_date <- as.Date(New_Music_Friday$drop_date)
 
 # renaming dataframe
-New_Music_Friday_2024 <- New_Music_Friday
+New_Music_Friday_2017 <- New_Music_Friday
 
 # Cleaning environment ----------------------------------------------------
 

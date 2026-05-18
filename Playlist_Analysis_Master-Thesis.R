@@ -1,3 +1,33 @@
+# ============================================================
+# Analysis script: Spotify playlist and chart analysis
+# ============================================================
+# This script reproduces the empirical analysis for the master
+# thesis project using the archived dataset created by the
+# accompanying web scraping scripts.
+#
+# Input:
+#   - all_data.RData
+#     This file is expected to contain the scraped and processed
+#     (Spotontrack) Spotify chart and playlist objects for 2017
+#     and 2024.
+#
+# Important reproducibility note:
+# The original web scraping pipeline was functional as of
+# August 2025. Since then, Spotontrack has changed its website
+# structure. Therefore, the scraping scripts are best understood as 
+# documentation of the original data collection workflow, while
+# this analysis script is intended to be run on the archived all_data.RData file.
+#
+# Main outputs:
+#   - Descriptive tables on playlist types, streaming volumes,
+#     and playlist characteristics
+#   - Event-study style fixed-effects plots for major Spotify
+#     editorial playlists
+#   - Global Top 50 / Top 200 rank discontinuity figures
+#   - New Music Friday descriptive plots and regression tables
+#
+# ============================================================
+
 # Loading libraries and data -------------------------------------------------------
 
 library(tidyverse)
@@ -17,6 +47,10 @@ library(knitr)
 library(scales)
 
 load("all_data.RData")
+
+# Folder for all generated figures and tables
+output_dir <- "Tables_and_Figures"
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 
 # Playlists Types (Table 1) ---------------------------------------------------------
@@ -77,7 +111,7 @@ playlist_ft <- playlist_table %>%
   font(part = "all", fontname = "Times New Roman")
 save_as_image(
   playlist_ft,
-  path = "D:/Uni/Master/Master-Thesis/Sources/Tables/Playlist_Types.png",
+  path = file.path(output_dir, "Playlist_Types.png"),
   zoom = 2
 )
 
@@ -124,7 +158,7 @@ country_names <- data.frame(
                    "Finland", "France", "Great Britain", "Hong Kong", "Indonesia", "Iceland",
                    "Italy", "Mexico", "Malaysia", "Netherlands", "Norway", "Philippines", "Poland", 
                    "Portugal", "Sweden", "Singapore", "Turkey", "Taiwan", "United States", "Total"))
-streams_per_country_2017_vs_2024 <- merge(country_names, streams_per_country_2017_vs_2024,, by = "country_code", all.x = TRUE)
+streams_per_country_2017_vs_2024 <- merge(country_names, streams_per_country_2017_vs_2024, by = "country_code", all.x = TRUE)
 streams_per_country_2017_vs_2024$country_code <- NULL
 
 # Creating table
@@ -150,7 +184,7 @@ streams_per_country_table <- streams_per_country_2017_vs_2024 %>%
   padding(j = ~ country_name + change, padding.left = 0, part = "all") %>%
   padding(padding.right = 8, part = "all") %>%
   font(part = "all", fontname = "Times New Roman")
-save_as_image(streams_per_country_table, "Streams_per_Country_2017_vs_2024.png")
+save_as_image(streams_per_country_table, file.path(output_dir, "Streams_per_Country_2017_vs_2024.png"))
 
 
 # Playlists characteristics (Tables 3 & 4) -----------------------------------------------
@@ -274,7 +308,7 @@ for (year in names(specs_by_year)) {
     align(align = "left", part = "header") %>%  # force left everywhere
     align(align = "left", part = "body")
   
-  save_as_image(tbl, paste0("Playlist_Characteristics_", year, ".png"))
+  save_as_image(tbl, file.path(output_dir, paste0("Playlist_Characteristics_", year, ".png")))
 }
 
 
@@ -424,7 +458,7 @@ for (year in c(2017, 2024)) {
       )
       
       ## saving table with estimates
-      png_file <- sprintf("%s_%d_%s_table.png", playlist, year, event)
+      png_file <- file.path(output_dir, sprintf("%s_%d_%s_table.png", playlist, year, event))
       title    <- sprintf("%s %d — %s (Event-time coefficients)", playlist, year, toupper(event))
       save_event_table_png(res[[event]], png_file, title = title)
     }
@@ -438,7 +472,7 @@ for (year in c(2017, 2024)) {
     
     ## combine and save plots
     fig <- p_add + p_drop
-    ggsave(paste0(playlist, "_FE_Plot_", year, ".png"), fig, width = 10, height = 5, dpi = 300)
+    ggsave(file.path(output_dir, paste0(playlist, "_FE_Plot_", year, ".png")), fig, width = 10, height = 5, dpi = 300)
   }
 }
 
@@ -453,7 +487,7 @@ for (year in c(2017, 2024)) {
     group_by(song_id) %>%
     mutate(playlist_rank = lag(position)) %>%
     ungroup() %>%
-    filter(substr(date, 1, 4) == year) %>%
+    filter(substr(date, 1, 4) == as.character(year)) %>%
     arrange(date, playlist_rank) %>%
     group_by(date) %>%
     mutate(
@@ -505,7 +539,7 @@ for (year in c(2017, 2024)) {
       legend.key.width  = unit(2.4, "lines"),
       legend.key.height = unit(0.6, "lines"),
       axis.title.x = element_text(margin = margin(t = 10)))
-  ggsave(paste0("Top_50_global_", year, ".png"), plot, width = 10, height = 5, dpi = 300)
+  ggsave(file.path(output_dir, paste0("Top_50_global_", year, ".png")), plot, width = 10, height = 5, dpi = 300)
 }
 
 
@@ -620,7 +654,7 @@ for (year in c(2017, 2024)) {
       legend.title = element_blank(),
       legend.position = "bottom",
       axis.title.x = element_text(margin = margin(t = 10)))
-  ggsave(paste0("NMF_Rank_and_Charts_", year, ".png"), plot1, width = 10, height = 5, dpi = 300)
+  ggsave(file.path(output_dir, paste0("NMF_Rank_and_Charts_", year, ".png")), plot1, width = 10, height = 5, dpi = 300)
   
   ## NMF Rank Effects - Overall (OLS vs Song FE)
   nmf <- nmf %>%
@@ -659,7 +693,7 @@ for (year in c(2017, 2024)) {
     scale_linetype_manual(values = c("solid", "dashed")) +
     guides(color = guide_legend(reverse = TRUE),
            linetype = guide_legend(reverse = TRUE))
-  ggsave(paste0("NMF_Rank_Effects_Overall_", year, ".png"), plot2, width = 10, height = 5, dpi = 300)
+  ggsave(file.path(output_dir, paste0("NMF_Rank_Effects_Overall_", year, ".png")), plot2, width = 10, height = 5, dpi = 300)
   
   ## Regressions (grouped ranks)
   nmf$position_group <- relevel(factor(nmf$position_group), ref = "NMF Rank: 31-50")
@@ -732,8 +766,8 @@ for (year in c(2017, 2024)) {
     add_header_above(c(" " = 1, setNames(rep(1, length(model_numbers)), model_numbers))) %>%
     kable_classic(full_width = FALSE, font_size = 14, html_font = "Times New Roman")
   
-  html_file <- paste0("NMF_Fixed_Effects_Table_", year, ".html")
-  png_file <- paste0("NMF_Fixed_Effects_Table_", year, ".png")
+  html_file <- file.path(output_dir, paste0("NMF_Fixed_Effects_Table_", year, ".html"))
+  png_file <- file.path(output_dir, paste0("NMF_Fixed_Effects_Table_", year, ".png"))
   save_kable(tbl, file = html_file)
   webshot(html_file, file = png_file, zoom = 2)
   file.remove(html_file)
@@ -749,8 +783,8 @@ tbl_html <- nmf_shares %>%
         col.names = c("Year","Listings","Domestic share","Indie share")) %>%
   kable_classic(full_width = FALSE, font_size = 14, html_font = "Times New Roman")
 
-html_file <- "NMF_Shares_Domestic_Indie_2017vs2024.html"
-png_file  <- "NMF_Shares_Domestic_Indie_2017vs2024.png"
+html_file <- file.path(output_dir, "NMF_Shares_Domestic_Indie_2017vs2024.html")
+png_file  <- file.path(output_dir, "NMF_Shares_Domestic_Indie_2017vs2024.png")
 save_kable(tbl_html, file = html_file)
 webshot(html_file, file = png_file, zoom = 2)
 file.remove(html_file)
