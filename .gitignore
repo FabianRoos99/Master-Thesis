@@ -1,0 +1,19 @@
+# Data
+all_data.RData
+*.RData
+*.rds
+*.csv
+
+# Credentials
+credentials.R
+
+# Generated outputs
+outputs/
+*.png
+*.html
+
+# RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
